@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialNet — Лента</title>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #080910;
+      --surface: #0f1018;
+      --surface2: #161720;
+      --border: #1f2030;
+      --accent: #5b7fff;
+      --accent2: #ff5b8a;
+      --accent3: #00e5a0;
+      --text: #f0f0f8;
+      --muted: #555670;
+      --error: #ff5b5b;
+      --success: #00e5a0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 10% 0%, rgba(91,127,255,0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 90% 100%, rgba(255,91,138,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      height: 60px;
+      background: rgba(8,9,16,0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      gap: 12px;
+    }
+
+    .nav-logo {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .nav-center {
+      flex: 1;
+      max-width: 320px;
+      position: relative;
+    }
+
+    .nav-search {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 14px 8px 36px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .nav-search:focus { border-color: var(--accent); }
+    .nav-search::placeholder { color: var(--muted); }
+
+    .search-icon {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    /* Notification bell */
+    .notif-btn {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .notif-btn:hover { border-color: var(--accent); }
+
+    .notif-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 18px;
+      height: 18px;
+      background: var(--accent2);
+      border: 2px solid var(--bg);
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 700;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: 'Unbounded', sans-serif;
+    }
+
+    .notif-badge.show { display: flex; }
+
+    .nav-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      color: white;
+      overflow: hidden;
+      border: 1px solid transparent;
+      transition: border-color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .nav-avatar:hover { border-color: var(--accent); }
+    .nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* ── LAYOUT ── */
+    .layout {
+      position: relative;
+      z-index: 1;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 76px 20px 40px;
+      display: grid;
+      grid-template-columns: 240px 1fr 280px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* ── SIDEBAR LEFT ── */
+    .sidebar-left {
+      position: sticky;
+      top: 76px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+
+    .sidebar-profile {
+      text-align: center;
+      padding-bottom: 4px;
+    }
+
+    .sidebar-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 auto 12px;
+      overflow: hidden;
+    }
+
+    .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .sidebar-name {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 3px;
+    }
+
+    .sidebar-username {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .sidebar-stats {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .sidebar-stat-num {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      display: block;
+      text-align: center;
+    }
+
+    .sidebar-stat-label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .sidebar-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      margin-bottom: 2px;
+    }
+
+    .sidebar-nav-item:hover, .sidebar-nav-item.active {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .sidebar-nav-item.active { color: var(--accent); }
+
+    /* ── FEED ── */
+    .feed {
+      animation: fadeUp 0.4s 0.1s ease both;
+    }
+
+    /* New post box */
+    .compose {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .compose-top {
+      display: flex;
+      gap: 12px;
+    }
+
+    .compose-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .compose-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .compose-textarea {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      resize: none;
+      min-height: 80px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      line-height: 1.55;
+    }
+
+    .compose-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(91,127,255,0.08);
+    }
+
+    .compose-textarea::placeholder { color: var(--muted); }
+
+    .compose-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-left: 54px;
+    }
+
+    .char-count { font-size: 12px; color: var(--muted); }
+    .char-count.warn { color: var(--error); }
+
+    .btn-post {
+      padding: 9px 22px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #7b5fff);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-post:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,127,255,0.3); }
+    .btn-post:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Post card */
+    .post-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 12px;
+      transition: border-color 0.2s, transform 0.2s;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .post-card:hover { border-color: #2a2b40; }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .post-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+      overflow: hidden;
+      text-decoration: none;
+      color: white;
+    }
+
+    .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .post-meta { flex: 1; }
+
+    .post-author {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .post-author:hover { color: var(--accent); }
+
+    .post-username-time {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+
+    .post-content {
+      font-size: 15px;
+      line-height: 1.65;
+      color: #d0d0e8;
+      margin-bottom: 16px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .post-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 7px 12px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover { background: var(--surface2); color: var(--text); }
+
+    .action-btn.liked { color: var(--accent2); }
+    .action-btn.liked:hover { background: rgba(255,91,138,0.1); }
+
+    .action-btn .icon { font-size: 16px; transition: transform 0.15s; }
+    .action-btn:active .icon { transform: scale(1.3); }
+
+    /* ── SIDEBAR RIGHT ── */
+    .sidebar-right {
+      position: sticky;
+      top: 76px;
+      animation: fadeUp 0.4s 0.2s ease both;
+    }
+
+    .widget-title {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 14px;
+    }
+
+    /* Notifications panel */
+    .notif-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .notif-item:last-child { border-bottom: none; }
+
+    .notif-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .notif-text {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #b0b0cc;
+    }
+
+    .notif-text strong { color: var(--text); font-weight: 600; }
+    .notif-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    .notif-unread .notif-text { color: var(--text); }
+
+    .notif-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+
+    /* Online users */
+    .online-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      text-decoration: none;
+      border-radius: 10px;
+      transition: all 0.2s;
+    }
+
+    .online-user:hover { opacity: 0.8; }
+
+    .online-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+      color: white;
+    }
+
+    .online-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+    .online-dot-sm {
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 10px; height: 10px;
+      background: var(--success);
+      border: 2px solid var(--surface);
+      border-radius: 50%;
+    }
+
+    .online-name { font-size: 13px; font-weight: 500; color: var(--text); }
+    .online-sub  { font-size: 11px; color: var(--muted); }
+
+    /* Empty / loader */
+    .loader {
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .spinner {
+      width: 26px; height: 26px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    .empty-feed {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .empty-feed .icon { font-size: 44px; margin-bottom: 14px; }
+    .empty-feed h3 { font-size: 16px; color: var(--text); margin-bottom: 6px; }
+    .empty-feed p  { font-size: 13px; }
+
+    /* Notifications dropdown */
+    .notif-dropdown {
+      position: fixed;
+      top: 66px;
+      right: 20px;
+      width: 320px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+      z-index: 200;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      display: none;
+      animation: fadeUp 0.2s ease both;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    .notif-dropdown.open { display: block; }
+    .notif-dropdown-title {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mark-read-btn {
+      font-size: 11px;
+      color: var(--accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 11px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 400;
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+      white-space: nowrap;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: rgba(0,229,160,0.3); color: var(--success); }
+    .toast.error   { border-color: rgba(255,91,91,0.3);  color: var(--error); }
+
+    /* Realtime indicator */
+    .live-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--success);
+      font-weight: 500;
+    }
+
+    .live-dot::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse 1.5s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar-left, .sidebar-right { display: none; }
+    }
+
+    @media (max-width: 500px) {
+      .nav-center { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">🌐 SocialNet</a>
+    <div class="nav-center">
+      <span class="search-icon">🔍</span>
+      <input class="nav-search" type="text" placeholder="Поиск пользователей..." id="search-input" oninput="onSearch()" />
+    </div>
+    <div class="nav-right">
+      <button class="notif-btn" id="notif-btn" onclick="toggleNotif()">
+        🔔
+        <span class="notif-badge" id="notif-badge">0</span>
+      </button>
+      <a href="profile.html" class="nav-avatar" id="nav-avatar">?</a>
+    </div>
+  </nav>
+
+  <!-- Notifications dropdown -->
+  <div class="notif-dropdown" id="notif-dropdown">
+    <div class="notif-dropdown-title">
+      Уведомления
+      <button class="mark-read-btn" onclick="markAllRead()">Отметить все прочитанными</button>
+    </div>
+    <div id="notif-list-dropdown">
+      <div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Нет уведомлений</div>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- Sidebar left -->
+    <aside class="sidebar-left">
+      <div class="sidebar-card sidebar-profile">
+        <div class="sidebar-avatar" id="sidebar-avatar">?</div>
+        <div class="sidebar-name" id="sidebar-name">Загрузка...</div>
+        <div class="sidebar-username" id="sidebar-username">@...</div>
+        <div class="sidebar-stats">
+          <div>
+            <span class="sidebar-stat-num" id="sb-posts">0</span>
+            <span class="sidebar-stat-label">Постов</span>
+          </div>
+          <div>
+            <span class="sidebar-stat-num" id="sb-likes">0</span>
+            <span class="sidebar-stat-label">Лайков</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <a href="index.html" class="sidebar-nav-item active">🏠 Лента</a>
+        <a href="profile.html" class="sidebar-nav-item">👤 Мой профиль</a>
+        <a href="#" class="sidebar-nav-item" onclick="toggleNotif()">🔔 Уведомления</a>
+        <a href="auth.html" class="sidebar-nav-item" onclick="logout(); return false;">🚪 Выйти</a>
+      </div>
+    </aside>
+
+    <!-- Feed -->
+    <main class="feed">
+      <!-- Compose -->
+      <div class="compose">
+        <div class="compose-top">
+          <div class="compose-avatar" id="compose-avatar">?</div>
+          <textarea class="compose-textarea" id="post-input"
+            placeholder="Что происходит?"
+            maxlength="500"
+            oninput="onPostInput()"></textarea>
+        </div>
+        <div class="compose-bottom">
+          <span class="char-count" id="char-count">0 / 500</span>
+          <button class="btn-post" id="btn-post" onclick="createPost()" disabled>✨ Опубликовать</button>
+        </div>
+      </div>
+
+      <!-- Live indicator -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 4px">
+        <span style="font-family:'Unbounded',sans-serif;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px">Лента</span>
+        <span class="live-dot" id="live-dot">Live</span>
+      </div>
+
+      <!-- Posts -->
+      <div id="posts-feed">
+        <div class="loader"><div class="spinner"></div></div>
+      </div>
+    </main>
+
+    <!-- Sidebar right -->
+    <aside class="sidebar-right">
+      <div class="sidebar-card">
+        <div class="widget-title">🔔 Уведомления</div>
+        <div id="notif-widget">
+          <div style="text-align:center;color:var(--muted);font-size:13px;padding:16px 0">Нет уведомлений</div>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <div class="widget-title">👥 Пользователи</div>
+        <div id="users-widget">
+          <div class="loader" style="padding:16px"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://kzvbhztfbxwsmchrufhi.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_AKeDLsCBwD9lTJ5ftJUmgw_sxOV9lnt';
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser = null;
+    let profile = null;
+    let allPosts = [];
+    let userLikes = new Set();
+    let notifications = [];
+    let unreadCount = 0;
+
+    // ── Init ──────────────────────────────────────────────────────
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.href = 'auth.html'; return; }
+      currentUser = session.user;
+
+      await Promise.all([loadProfile(), loadPosts(), loadNotifications(), loadUsers()]);
+      subscribeRealtime();
+    }
+
+    // ── Profile ───────────────────────────────────────────────────
+    async function loadProfile() {
+      const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+      if (!data) return;
+      profile = data;
+
+      const name = data.full_name || data.username || '?';
+      const letter = name[0].toUpperCase();
+
+      document.getElementById('sidebar-name').textContent = name;
+      document.getElementById('sidebar-username').textContent = '@' + data.username;
+
+      // Nav avatar
+      const navAv = document.getElementById('nav-avatar');
+      if (data.avatar_url) {
+        navAv.innerHTML = `<img src="${data.avatar_url}">`;
+      } else {
+        navAv.textContent = letter;
+      }
+
+      // Sidebar avatar
+      const sbAv = document.getElementById('sidebar-avatar');
+      if (data.avatar_url) {
+        sbAv.innerHTML = `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+      } else {
+        sbAv.textContent = letter;
+      }
+
+      // Compose avatar
+      const cAv = document.getElementById('compose-avatar');
+      if (data.avatar_url) {
+        cAv.innerHTML = `<img src="${data.avatar_url}">`;
+      } else {
+        cAv.textContent = letter;
+      }
+
+      // Stats
+      const { count: postCount } = await sb.from('posts').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
+      document.getElementById('sb-posts').textContent = postCount || 0;
+    }
+
+    // ── Posts ─────────────────────────────────────────────────────
+    async function loadPosts() {
+      const { data, error } = await sb
+        .from('posts')
+        .select(`*, profiles(id, username, full_name, avatar_url)`)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) { showToast('Ошибка загрузки постов', 'error'); return; }
+
+      const { data: likesData } = await sb.from('likes').select('post_id').eq('user_id', currentUser.id);
+      userLikes = new Set((likesData || []).map(l => l.post_id));
+
+      allPosts = data || [];
+      renderPosts(allPosts);
+    }
+
+    function renderPosts(posts) {
+      const feed = document.getElementById('posts-feed');
+
+      if (posts.length === 0) {
+        feed.innerHTML = `
+          <div class="empty-feed">
+            <div class="icon">🌐</div>
+            <h3>Лента пуста</h3>
+            <p>Будьте первым — опубликуйте пост!</p>
+          </div>`;
+        return;
+      }
+
+      feed.innerHTML = posts.map((p, i) => {
+        const pr = p.profiles;
+        const name = pr?.full_name || pr?.username || 'Пользователь';
+        const letter = name[0].toUpperCase();
+        const isOwn = p.user_id === currentUser.id;
+        const liked = userLikes.has(p.id);
+
+        return `
+        <div class="post-card" id="post-${p.id}" style="animation-delay:${i * 0.04}s">
+          <div class="post-header">
+            <a href="${isOwn ? 'profile.html' : '#'}" class="post-avatar">
+              ${pr?.avatar_url
+                ? `<img src="${pr.avatar_url}">`
+                : `<span style="font-family:'Unbounded',sans-serif;font-weight:700">${letter}</span>`}
+            </a>
+            <div class="post-meta">
+              <a href="${isOwn ? 'profile.html' : '#'}" class="post-author">${name}</a>
+              <div class="post-username-time">@${pr?.username || '?'} · ${timeAgo(p.created_at)}</div>
+            </div>
+            ${isOwn ? `<button class="action-btn" onclick="deletePost('${p.id}')" style="margin-left:auto;opacity:0.5" title="Удалить">🗑</button>` : ''}
+          </div>
+          <div class="post-content">${escHtml(p.content)}</div>
+          <div class="post-actions">
+            <button class="action-btn ${liked ? 'liked' : ''}" onclick="toggleLike('${p.id}', ${p.likes_count||0}, '${p.user_id}')">
+              <span class="icon">${liked ? '❤️' : '🤍'}</span>
+              <span id="likes-${p.id}">${p.likes_count || 0}</span>
+            </button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function onPostInput() {
+      const val = document.getElementById('post-input').value;
+      const len = val.length;
+      const cc = document.getElementById('char-count');
+      cc.textContent = `${len} / 500`;
+      cc.classList.toggle('warn', len > 450);
+      document.getElementById('btn-post').disabled = val.trim().length === 0;
+    }
+
+    async function createPost() {
+      const content = document.getElementById('post-input').value.trim();
+      if (!content) return;
+      const btn = document.getElementById('btn-post');
+      btn.disabled = true;
+      btn.textContent = '⏳';
+
+      const { error } = await sb.from('posts').insert({ user_id: currentUser.id, content });
+      btn.textContent = '✨ Опубликовать';
+
+      if (error) { showToast('Ошибка публикации', 'error'); btn.disabled = false; return; }
+      document.getElementById('post-input').value = '';
+      document.getElementById('char-count').textContent = '0 / 500';
+      showToast('✅ Опубликовано!', 'success');
+      await loadPosts();
+    }
+
+    async function deletePost(id) {
+      if (!confirm('Удалить пост?')) return;
+      await sb.from('posts').delete().eq('id', id);
+      showToast('🗑 Удалено', 'success');
+      await loadPosts();
+    }
+
+    async function toggleLike(postId, count, postOwnerId) {
+      if (userLikes.has(postId)) {
+        await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+        await sb.from('posts').update({ likes_count: Math.max(0, count - 1) }).eq('id', postId);
+        userLikes.delete(postId);
+      } else {
+        await sb.from('likes').insert({ post_id: postId, user_id: currentUser.id });
+        await sb.from('posts').update({ likes_count: count + 1 }).eq('id', postId);
+        userLikes.add(postId);
+
+        // Send notification if not own post
+        if (postOwnerId !== currentUser.id) {
+          await sb.from('notifications').insert({
+            user_id: postOwnerId,
+            from_id: currentUser.id,
+            type: 'like',
+            post_id: postId
+          });
+        }
+      }
+      await loadPosts();
+    }
+
+    // ── Notifications ─────────────────────────────────────────────
+    async function loadNotifications() {
+      const { data } = await sb
+        .from('notifications')
+        .select(`*, from:profiles!notifications_from_id_fkey(username, full_name, avatar_url)`)
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      notifications = data || [];
+      unreadCount = notifications.filter(n => !n.is_read).length;
+      renderNotifications();
+    }
+
+    function renderNotifications() {
+      const badge = document.getElementById('notif-badge');
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+        badge.classList.add('show');
+      } else {
+        badge.classList.remove('show');
+      }
+
+      const typeMap = { like: '❤️', comment: '💬', follow: '👤', mention: '@' };
+
+      const html = notifications.length === 0
+        ? '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Нет уведомлений</div>'
+        : notifications.slice(0, 5).map(n => {
+          const name = n.from?.full_name || n.from?.username || 'Кто-то';
+          const typeText = n.type === 'like' ? 'лайкнул ваш пост' : n.type === 'comment' ? 'прокомментировал' : 'подписался на вас';
+          return `
+          <div class="notif-item ${!n.is_read ? 'notif-unread' : ''}">
+            <div class="notif-icon">${typeMap[n.type] || '🔔'}</div>
+            <div class="notif-text">
+              <strong>${name}</strong> ${typeText}
+              <div class="notif-time">${timeAgo(n.created_at)}</div>
+            </div>
+            ${!n.is_read ? '<div class="notif-dot"></div>' : ''}
+          </div>`;
+        }).join('');
+
+      document.getElementById('notif-widget').innerHTML = html;
+      document.getElementById('notif-list-dropdown').innerHTML = notifications.length === 0
+        ? '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px">Нет уведомлений</div>'
+        : notifications.map(n => {
+          const name = n.from?.full_name || n.from?.username || 'Кто-то';
+          const typeText = n.type === 'like' ? 'лайкнул ваш пост' : n.type === 'comment' ? 'прокомментировал' : 'подписался';
+          return `
+          <div class="notif-item ${!n.is_read ? 'notif-unread' : ''}">
+            <div class="notif-icon">${typeMap[n.type] || '🔔'}</div>
+            <div class="notif-text">
+              <strong>${name}</strong> ${typeText}
+              <div class="notif-time">${timeAgo(n.created_at)}</div>
+            </div>
+            ${!n.is_read ? '<div class="notif-dot"></div>' : ''}
+          </div>`;
+        }).join('');
+    }
+
+    async function markAllRead() {
+      await sb.from('notifications').update({ is_read: true }).eq('user_id', currentUser.id).eq('is_read', false);
+      unreadCount = 0;
+      notifications = notifications.map(n => ({ ...n, is_read: true }));
+      renderNotifications();
+    }
+
+    function toggleNotif() {
+      const dd = document.getElementById('notif-dropdown');
+      dd.classList.toggle('open');
+      if (dd.classList.contains('open') && unreadCount > 0) markAllRead();
+    }
+
+    document.addEventListener('click', (e) => {
+      const dd = document.getElementById('notif-dropdown');
+      const btn = document.getElementById('notif-btn');
+      if (!dd.contains(e.target) && !btn.contains(e.target)) {
+        dd.classList.remove('open');
+      }
+    });
+
+    // ── Users widget ──────────────────────────────────────────────
+    async function loadUsers() {
+      const { data } = await sb
+        .from('profiles')
+        .select('*')
+        .neq('id', currentUser.id)
+        .limit(5);
+
+      const w = document.getElementById('users-widget');
+      if (!data || data.length === 0) {
+        w.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:13px;padding:12px">Пока нет других пользователей</div>';
+        return;
+      }
+
+      w.innerHTML = data.map(u => {
+        const name = u.full_name || u.username || '?';
+        return `
+        <div class="online-user">
+          <div class="online-avatar">
+            ${u.avatar_url ? `<img src="${u.avatar_url}">` : name[0].toUpperCase()}
+            <div class="online-dot-sm"></div>
+          </div>
+          <div>
+            <div class="online-name">${name}</div>
+            <div class="online-sub">@${u.username}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── Search ────────────────────────────────────────────────────
+    let searchTimer;
+    function onSearch() {
+      clearTimeout(searchTimer);
+      const q = document.getElementById('search-input').value.trim().toLowerCase();
+      if (!q) { renderPosts(allPosts); return; }
+      searchTimer = setTimeout(() => {
+        const filtered = allPosts.filter(p =>
+          p.content.toLowerCase().includes(q) ||
+          p.profiles?.username?.toLowerCase().includes(q) ||
+          p.profiles?.full_name?.toLowerCase().includes(q)
+        );
+        renderPosts(filtered);
+      }, 300);
+    }
+
+    // ── Realtime ──────────────────────────────────────────────────
+    function subscribeRealtime() {
+      // New posts
+      sb.channel('posts-feed')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'posts' }, async () => {
+          await loadPosts();
+          showToast('🆕 Новый пост!', 'success');
+        })
+        .subscribe();
+
+      // Notifications
+      sb.channel('my-notifications')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${currentUser.id}`
+        }, async (payload) => {
+          await loadNotifications();
+          const typeText = payload.new.type === 'like' ? 'лайкнул ваш пост' : 'новое уведомление';
+          showToast(`🔔 ${typeText}`, 'success');
+        })
+        .subscribe();
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────
+    function timeAgo(d) {
+      const diff = (Date.now() - new Date(d)) / 1000;
+      if (diff < 60) return 'только что';
+      if (diff < 3600) return Math.floor(diff / 60) + ' мин';
+      if (diff < 86400) return Math.floor(diff / 3600) + ' ч';
+      return Math.floor(diff / 86400) + ' дн';
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    async function logout() {
+      await sb.auth.signOut();
+      window.location.href = 'auth.html';
+    }
+
+    init();
+  </script>
+</body>
+</html>

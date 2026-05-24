@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialNet — Вход</title>
+  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #06070d;
+      --card: #0e0f1a;
+      --border: #1e2035;
+      --border-hover: #3a3d60;
+      --accent: #4f8ef7;
+      --accent2: #a78bfa;
+      --accent3: #34d399;
+      --text: #eeeef5;
+      --muted: #5a5c7a;
+      --error: #f87171;
+      --success: #34d399;
+      --input-bg: #0a0b17;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Instrument Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* Ambient background */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.18;
+      animation: drift 20s ease-in-out infinite;
+    }
+
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #4f8ef7, transparent);
+      top: -100px; left: -100px;
+      animation-delay: 0s;
+    }
+
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #a78bfa, transparent);
+      bottom: -80px; right: -80px;
+      animation-delay: -8s;
+    }
+
+    .orb-3 {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, #34d399, transparent);
+      top: 50%; left: 60%;
+      animation-delay: -14s;
+    }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    /* Grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(79,142,247,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,142,247,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Main layout */
+    .auth-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      padding: 20px;
+      animation: pageIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes pageIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Logo */
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 18px;
+      font-size: 26px;
+      margin-bottom: 14px;
+      box-shadow: 0 0 40px rgba(79,142,247,0.3), 0 0 80px rgba(167,139,250,0.15);
+    }
+
+    .logo-name {
+      display: block;
+      font-family: 'Clash Display', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--text) 30%, var(--muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(79,142,247,0.04) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 28px;
+      gap: 4px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 9px;
+      border: none;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 1px 6px rgba(0,0,0,0.4);
+    }
+
+    .tab:hover:not(.active) { color: var(--text); }
+
+    /* Form */
+    .form-title {
+      font-family: 'Clash Display', sans-serif;
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+
+    .form-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 16px;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      padding: 12px 14px 12px 42px;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+
+    .field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,142,247,0.1);
+      background: #0c0d1c;
+    }
+
+    .field input::placeholder { color: var(--muted); opacity: 0.6; }
+
+    .field input.error-field {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(248,113,113,0.1);
+    }
+
+    .pw-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px 6px;
+      font-size: 16px;
+      transition: color 0.2s;
+      line-height: 1;
+    }
+    .pw-toggle:hover { color: var(--text); }
+
+    /* Password strength */
+    .pw-strength {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .pw-bar {
+      flex: 1;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+
+    .pw-bar.weak   { background: var(--error); }
+    .pw-bar.medium { background: #fbbf24; }
+    .pw-bar.strong { background: var(--success); }
+
+    /* Alert */
+    .alert {
+      display: none;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 16px;
+      animation: alertIn 0.3s ease;
+    }
+
+    @keyframes alertIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .alert.error {
+      background: rgba(248,113,113,0.1);
+      border: 1px solid rgba(248,113,113,0.25);
+      color: #fca5a5;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .alert.success {
+      background: rgba(52,211,153,0.1);
+      border: 1px solid rgba(52,211,153,0.25);
+      color: #6ee7b7;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    /* Submit button */
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: white;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+      margin-top: 4px;
+      box-shadow: 0 4px 24px rgba(79,142,247,0.25);
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 32px rgba(79,142,247,0.35);
+    }
+
+    .btn-submit:active { transform: translateY(0); }
+
+    .btn-submit:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-submit .inner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn-submit.loading .spinner { display: block; }
+    .btn-submit.loading .btn-label { opacity: 0.8; }
+
+
+
+    /* Logged-in state */
+    .logged-in {
+      display: none;
+      text-align: center;
+    }
+
+    .avatar-circle {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin: 0 auto 16px;
+      box-shadow: 0 0 32px rgba(79,142,247,0.3);
+    }
+
+    .user-name {
+      font-family: 'Clash Display', sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .user-email {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    .btn-goto {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 12px;
+      color: white;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(79,142,247,0.25);
+      margin-bottom: 12px;
+    }
+
+    .btn-goto:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(79,142,247,0.35); }
+
+    .btn-logout {
+      display: block;
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      color: var(--muted);
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover { border-color: var(--error); color: var(--error); }
+
+    /* Success checkmark animation */
+    .check-anim {
+      display: none;
+      width: 56px;
+      height: 56px;
+      background: rgba(52,211,153,0.1);
+      border-radius: 50%;
+      border: 2px solid var(--success);
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin: 0 auto 16px;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .footer a { color: var(--accent); text-decoration: none; }
+
+    /* Form panel transition */
+    .form-panel {
+      animation: panelIn 0.25s ease both;
+    }
+
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateX(8px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="bg-grid"></div>
+
+  <div class="auth-wrap">
+    <div class="logo">
+      <div class="logo-mark">🌐</div>
+      <span class="logo-name">SocialNet</span>
+    </div>
+
+    <div class="card">
+
+      <!-- Already logged in -->
+      <div class="logged-in" id="logged-in">
+        <div class="avatar-circle" id="avatar-icon">👤</div>
+        <div class="user-name" id="user-name">Пользователь</div>
+        <div class="user-email" id="user-email"></div>
+        <a href="index.html" class="btn-goto">
+          🏠 Открыть SocialNet
+        </a>
+        <button class="btn-logout" onclick="logout()">Выйти из аккаунта</button>
+      </div>
+
+      <!-- Auth forms -->
+      <div id="auth-forms">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('login')">Войти</button>
+          <button class="tab" onclick="switchTab('register')">Регистрация</button>
+        </div>
+
+        <!-- Alert -->
+        <div class="alert" id="alert"></div>
+
+        <!-- LOGIN -->
+        <div id="panel-login" class="form-panel">
+          <div class="form-title">С возвращением!</div>
+          <div class="form-sub">Войдите в свой аккаунт</div>
+
+          <div class="field">
+            <label>Email</label>
+            <div class="input-wrap">
+              <span class="input-icon">✉️</span>
+              <input type="email" id="login-email" placeholder="you@example.com" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Пароль</label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="login-password" placeholder="Ваш пароль"
+                onkeydown="if(event.key==='Enter') doLogin()" />
+              <button class="pw-toggle" onclick="togglePw('login-password', this)">👁</button>
+            </div>
+          </div>
+
+          <button class="btn-submit" id="btn-login" onclick="doLogin()">
+            <span class="inner">
+              <span class="spinner"></span>
+              <span class="btn-label">Войти</span>
+            </span>
+          </button>
+
+        </div>
+
+        <!-- REGISTER -->
+        <div id="panel-register" class="form-panel" style="display:none">
+          <div class="form-title">Создать аккаунт</div>
+          <div class="form-sub">Присоединяйтесь к SocialNet</div>
+
+          <div class="field">
+            <label>Имя</label>
+            <div class="input-wrap">
+              <span class="input-icon">👤</span>
+              <input type="text" id="reg-name" placeholder="Ваше имя" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Email</label>
+            <div class="input-wrap">
+              <span class="input-icon">✉️</span>
+              <input type="email" id="reg-email" placeholder="you@example.com" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Пароль</label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input type="password" id="reg-password" placeholder="Минимум 6 символов"
+                oninput="checkStrength(this.value)"
+                onkeydown="if(event.key==='Enter') doRegister()" />
+              <button class="pw-toggle" onclick="togglePw('reg-password', this)">👁</button>
+            </div>
+            <div class="pw-strength">
+              <div class="pw-bar" id="bar1"></div>
+              <div class="pw-bar" id="bar2"></div>
+              <div class="pw-bar" id="bar3"></div>
+              <div class="pw-bar" id="bar4"></div>
+            </div>
+          </div>
+
+          <button class="btn-submit" id="btn-register" onclick="doRegister()">
+            <span class="inner">
+              <span class="spinner"></span>
+              <span class="btn-label">Создать аккаунт</span>
+            </span>
+          </button>
+
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      SocialNet &mdash; <a href="#">Политика конфиденциальности</a>
+    </div>
+  </div>
+
+  <script>
+    // ─── Supabase init ───────────────────────────────────────────
+    const SUPABASE_URL = 'https://kzvbhztfbxwsmchrufhi.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_AKeDLsCBwD9lTJ5ftJUmgw_sxOV9lnt';
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // ─── Check session on load ────────────────────────────────────
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) showLoggedIn(session.user);
+    });
+
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) showLoggedIn(session.user);
+      if (event === 'SIGNED_OUT') showAuthForms();
+    });
+
+    // ─── UI helpers ───────────────────────────────────────────────
+    function switchTab(tab) {
+      const tabs = document.querySelectorAll('.tab');
+      tabs[0].classList.toggle('active', tab === 'login');
+      tabs[1].classList.toggle('active', tab === 'register');
+      document.getElementById('panel-login').style.display = tab === 'login' ? 'block' : 'none';
+      document.getElementById('panel-register').style.display = tab === 'register' ? 'block' : 'none';
+      clearAlert();
+
+      // re-trigger animation
+      const panel = document.getElementById(`panel-${tab}`);
+      panel.classList.remove('form-panel');
+      void panel.offsetWidth;
+      panel.classList.add('form-panel');
+    }
+
+    function showAlert(msg, type = 'error') {
+      const el = document.getElementById('alert');
+      el.className = `alert ${type}`;
+      el.innerHTML = `<span>${type === 'error' ? '⚠️' : '✅'}</span><span>${msg}</span>`;
+      el.style.display = 'flex';
+    }
+
+    function clearAlert() {
+      const el = document.getElementById('alert');
+      el.style.display = 'none';
+    }
+
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      btn.classList.toggle('loading', loading);
+    }
+
+    function togglePw(id, btn) {
+      const inp = document.getElementById(id);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+    }
+
+    function checkStrength(pw) {
+      const bars = [1,2,3,4].map(i => document.getElementById(`bar${i}`));
+      bars.forEach(b => b.className = 'pw-bar');
+      if (!pw) return;
+      const score =
+        (pw.length >= 6 ? 1 : 0) +
+        (pw.length >= 10 ? 1 : 0) +
+        (/[A-Z]/.test(pw) || /[0-9]/.test(pw) ? 1 : 0) +
+        (/[^A-Za-z0-9]/.test(pw) ? 1 : 0);
+      const cls = score <= 1 ? 'weak' : score <= 2 ? 'medium' : 'strong';
+      bars.slice(0, score).forEach(b => b.classList.add(cls));
+    }
+
+    function showLoggedIn(user) {
+      document.getElementById('auth-forms').style.display = 'none';
+      const li = document.getElementById('logged-in');
+      li.style.display = 'block';
+      li.style.animation = 'panelIn 0.3s ease both';
+
+      const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Пользователь';
+      document.getElementById('user-name').textContent = name;
+      document.getElementById('user-email').textContent = user.email;
+
+      if (user.user_metadata?.avatar_url) {
+        const img = document.createElement('img');
+        img.src = user.user_metadata.avatar_url;
+        img.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover';
+        document.getElementById('avatar-icon').textContent = '';
+        document.getElementById('avatar-icon').appendChild(img);
+      } else {
+        document.getElementById('avatar-icon').textContent = name[0].toUpperCase();
+      }
+    }
+
+    function showAuthForms() {
+      document.getElementById('logged-in').style.display = 'none';
+      document.getElementById('auth-forms').style.display = 'block';
+    }
+
+    // ─── Auth actions ─────────────────────────────────────────────
+    async function doLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      clearAlert();
+
+      if (!email || !password) {
+        showAlert('Заполните все поля');
+        return;
+      }
+
+      setLoading('btn-login', true);
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      setLoading('btn-login', false);
+
+      if (error) {
+        const msg = error.message.includes('Invalid login')
+          ? 'Неверный email или пароль'
+          : error.message.includes('Email not confirmed')
+          ? 'Подтвердите email перед входом'
+          : error.message;
+        showAlert(msg);
+      }
+    }
+
+    async function doRegister() {
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      clearAlert();
+
+      if (!name || !email || !password) {
+        showAlert('Заполните все поля');
+        return;
+      }
+
+      if (password.length < 6) {
+        showAlert('Пароль должен быть минимум 6 символов');
+        return;
+      }
+
+      setLoading('btn-register', true);
+      const { error } = await sb.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name }
+        }
+      });
+      setLoading('btn-register', false);
+
+      if (error) {
+        const msg = error.message.includes('already registered')
+          ? 'Этот email уже зарегистрирован'
+          : error.message;
+        showAlert(msg);
+      } else {
+        showAlert('✅ Аккаунт создан! Проверьте почту для подтверждения.', 'success');
+        setTimeout(() => switchTab('login'), 2500);
+      }
+    }
+
+    async function logout() {
+      await sb.auth.signOut();
+    }
+  </script>
+</body>
+</html>

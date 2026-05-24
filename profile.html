@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialNet — Профиль</title>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #080910;
+      --surface: #0f1018;
+      --surface2: #161720;
+      --border: #1f2030;
+      --accent: #5b7fff;
+      --accent2: #ff5b8a;
+      --accent3: #00e5a0;
+      --text: #f0f0f8;
+      --muted: #555670;
+      --error: #ff5b5b;
+      --success: #00e5a0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 15% 0%, rgba(91,127,255,0.1) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 35% at 85% 100%, rgba(255,91,138,0.07) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Nav */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(8,9,16,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-decoration: none;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    .nav-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .nav-btn.primary:hover {
+      background: #7090ff;
+      border-color: #7090ff;
+      color: white;
+    }
+
+    /* Layout */
+    .page {
+      position: relative;
+      z-index: 1;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 80px 20px 60px;
+    }
+
+    /* Profile header */
+    .profile-header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .profile-banner {
+      height: 120px;
+      background: linear-gradient(135deg, #1a1f3a, #0f1528, #1a1030);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .profile-banner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(91,127,255,0.2), rgba(255,91,138,0.15), rgba(0,229,160,0.1));
+    }
+
+    .banner-dots {
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    .profile-body {
+      padding: 0 28px 28px;
+    }
+
+    .avatar-wrap {
+      position: relative;
+      display: inline-block;
+      margin-top: -44px;
+      margin-bottom: 14px;
+    }
+
+    .avatar {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      border: 4px solid var(--bg);
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: white;
+      overflow: hidden;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      position: relative;
+    }
+
+    .avatar:hover .avatar-overlay { opacity: 1; }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .avatar-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 20px;
+    }
+
+    .avatar-upload { display: none; }
+
+    .online-dot {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      width: 16px;
+      height: 16px;
+      background: var(--success);
+      border: 3px solid var(--bg);
+      border-radius: 50%;
+    }
+
+    .profile-name-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .profile-name {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .profile-username {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .btn-edit {
+      padding: 8px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-edit:hover { border-color: var(--accent); color: var(--accent); }
+
+    .profile-bio {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #a0a0c0;
+      margin: 14px 0;
+      min-height: 20px;
+    }
+
+    .profile-bio.empty { color: var(--muted); font-style: italic; }
+
+    .profile-stats {
+      display: flex;
+      gap: 24px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Edit modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      max-width: 420px;
+      transform: translateY(20px) scale(0.97);
+      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    }
+
+    .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+    .modal-title {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .modal-field {
+      margin-bottom: 14px;
+    }
+
+    .modal-field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 7px;
+    }
+
+    .modal-field input,
+    .modal-field textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      resize: none;
+    }
+
+    .modal-field input:focus,
+    .modal-field textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(91,127,255,0.1);
+    }
+
+    .modal-field input::placeholder,
+    .modal-field textarea::placeholder { color: var(--muted); }
+
+    .modal-btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      padding: 11px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-cancel:hover { color: var(--text); border-color: var(--border-hover); }
+
+    .btn-save {
+      flex: 2;
+      padding: 11px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #7b5fff);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-save:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* New post box */
+    .post-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      animation: fadeUp 0.5s 0.1s ease both;
+    }
+
+    .post-box-top {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .post-avatar-sm {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Unbounded', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .post-avatar-sm img { width: 100%; height: 100%; object-fit: cover; }
+
+    .post-textarea {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      resize: none;
+      min-height: 80px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      line-height: 1.5;
+    }
+
+    .post-textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(91,127,255,0.08);
+    }
+
+    .post-textarea::placeholder { color: var(--muted); }
+
+    .post-box-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-left: 52px;
+    }
+
+    .char-count {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: monospace;
+    }
+
+    .char-count.warn { color: var(--error); }
+
+    .btn-post {
+      padding: 9px 22px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #7b5fff);
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-post:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(91,127,255,0.3); }
+    .btn-post:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* Posts feed */
+    .posts-section {
+      animation: fadeUp 0.5s 0.2s ease both;
+    }
+
+    .section-label {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    .post-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 12px;
+      transition: border-color 0.2s;
+      animation: fadeUp 0.3s ease both;
+    }
+
+    .post-card:hover { border-color: #2a2b40; }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .post-user-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .post-time {
+      font-size: 12px;
+      color: var(--muted);
+      margin-left: auto;
+    }
+
+    .post-content {
+      font-size: 15px;
+      line-height: 1.65;
+      color: #d0d0e8;
+      margin-bottom: 14px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .post-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .action-btn:hover { background: var(--surface2); color: var(--text); }
+    .action-btn.liked { color: var(--accent2); }
+    .action-btn.liked:hover { background: rgba(255,91,138,0.1); }
+
+    .action-btn .icon { font-size: 16px; }
+
+    .delete-btn {
+      margin-left: auto;
+      color: var(--muted);
+      background: none;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      padding: 6px 8px;
+      border-radius: 8px;
+      transition: all 0.2s;
+      opacity: 0;
+    }
+
+    .post-card:hover .delete-btn { opacity: 1; }
+    .delete-btn:hover { background: rgba(255,91,91,0.1); color: var(--error); }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--muted);
+    }
+
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 500;
+      z-index: 300;
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: rgba(0,229,160,0.3); color: var(--success); }
+    .toast.error { border-color: rgba(255,91,91,0.3); color: var(--error); }
+
+    /* Loader */
+    .loader {
+      display: flex;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .spinner {
+      width: 28px; height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a href="index.html" class="nav-logo">🌐 SocialNet</a>
+    <div class="nav-right">
+      <a href="index.html" class="nav-btn">🏠 Лента</a>
+      <button class="nav-btn" onclick="logout()">Выйти</button>
+    </div>
+  </nav>
+
+  <div class="page">
+
+    <!-- Profile header -->
+    <div class="profile-header">
+      <div class="profile-banner">
+        <div class="banner-dots"></div>
+      </div>
+      <div class="profile-body">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start">
+          <div class="avatar-wrap">
+            <div class="avatar" id="avatar" onclick="document.getElementById('avatar-upload').click()">
+              <span id="avatar-letter">?</span>
+              <div class="avatar-overlay">📷</div>
+            </div>
+            <div class="online-dot"></div>
+            <input type="file" id="avatar-upload" class="avatar-upload" accept="image/*" onchange="uploadAvatar(event)" />
+          </div>
+          <button class="btn-edit" style="margin-top:12px" onclick="openEdit()">✏️ Редактировать</button>
+        </div>
+
+        <div class="profile-name-row">
+          <div>
+            <div class="profile-name" id="profile-name">Загрузка...</div>
+            <div class="profile-username" id="profile-username">@...</div>
+          </div>
+        </div>
+
+        <div class="profile-bio empty" id="profile-bio">Нет описания</div>
+
+        <div class="profile-stats">
+          <div class="stat">
+            <span class="stat-num" id="stat-posts">0</span>
+            <span class="stat-label">Постов</span>
+          </div>
+          <div class="stat">
+            <span class="stat-num" id="stat-likes">0</span>
+            <span class="stat-label">Лайков</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- New post -->
+    <div class="post-box">
+      <div class="post-box-top">
+        <div class="post-avatar-sm" id="post-avatar-sm">
+          <span id="post-avatar-letter">?</span>
+        </div>
+        <textarea class="post-textarea" id="post-input"
+          placeholder="Что у вас нового?"
+          maxlength="500"
+          oninput="onPostInput()"></textarea>
+      </div>
+      <div class="post-box-bottom">
+        <span class="char-count" id="char-count">0 / 500</span>
+        <button class="btn-post" id="btn-post" onclick="createPost()" disabled>
+          ✨ Опубликовать
+        </button>
+      </div>
+    </div>
+
+    <!-- Posts -->
+    <div class="posts-section">
+      <div class="section-label">Мои посты</div>
+      <div id="posts-list">
+        <div class="loader"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Edit modal -->
+  <div class="modal-overlay" id="modal" onclick="closeEditOutside(event)">
+    <div class="modal">
+      <div class="modal-title">✏️ Редактировать профиль</div>
+      <div class="modal-field">
+        <label>Имя</label>
+        <input type="text" id="edit-name" placeholder="Ваше имя" maxlength="50" />
+      </div>
+      <div class="modal-field">
+        <label>Username</label>
+        <input type="text" id="edit-username" placeholder="username" maxlength="30" />
+      </div>
+      <div class="modal-field">
+        <label>О себе</label>
+        <textarea id="edit-bio" placeholder="Расскажите о себе..." rows="3" maxlength="200"></textarea>
+      </div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeEdit()">Отмена</button>
+        <button class="btn-save" id="btn-save" onclick="saveProfile()">💾 Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://kzvbhztfbxwsmchrufhi.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_AKeDLsCBwD9lTJ5ftJUmgw_sxOV9lnt';
+    const { createClient } = supabase;
+    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let currentUser = null;
+    let profile = null;
+    let userLikes = new Set();
+
+    // ── Init ─────────────────────────────────────────────────────
+    async function init() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.href = 'auth.html'; return; }
+      currentUser = session.user;
+      await loadProfile();
+      await loadPosts();
+    }
+
+    // ── Profile ───────────────────────────────────────────────────
+    async function loadProfile() {
+      const { data, error } = await sb
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (error || !data) {
+        showToast('Ошибка загрузки профиля', 'error');
+        return;
+      }
+
+      profile = data;
+      renderProfile();
+    }
+
+    function renderProfile() {
+      const name = profile.full_name || profile.username || 'Без имени';
+      const letter = name[0].toUpperCase();
+
+      document.getElementById('profile-name').textContent = name;
+      document.getElementById('profile-username').textContent = '@' + profile.username;
+      document.getElementById('avatar-letter').textContent = letter;
+      document.getElementById('post-avatar-letter').textContent = letter;
+
+      const bioEl = document.getElementById('profile-bio');
+      if (profile.bio) {
+        bioEl.textContent = profile.bio;
+        bioEl.classList.remove('empty');
+      } else {
+        bioEl.textContent = 'Нет описания';
+        bioEl.classList.add('empty');
+      }
+
+      if (profile.avatar_url) {
+        setAvatarImg(profile.avatar_url);
+      }
+    }
+
+    function setAvatarImg(url) {
+      const av = document.getElementById('avatar');
+      av.querySelector('#avatar-letter').style.display = 'none';
+      let img = av.querySelector('img');
+      if (!img) {
+        img = document.createElement('img');
+        av.insertBefore(img, av.firstChild);
+      }
+      img.src = url;
+
+      const sm = document.getElementById('post-avatar-sm');
+      sm.querySelector('#post-avatar-letter').style.display = 'none';
+      let img2 = sm.querySelector('img');
+      if (!img2) { img2 = document.createElement('img'); sm.appendChild(img2); }
+      img2.src = url;
+    }
+
+    // ── Edit modal ────────────────────────────────────────────────
+    function openEdit() {
+      document.getElementById('edit-name').value = profile.full_name || '';
+      document.getElementById('edit-username').value = profile.username || '';
+      document.getElementById('edit-bio').value = profile.bio || '';
+      document.getElementById('modal').classList.add('open');
+    }
+
+    function closeEdit() {
+      document.getElementById('modal').classList.remove('open');
+    }
+
+    function closeEditOutside(e) {
+      if (e.target === document.getElementById('modal')) closeEdit();
+    }
+
+    async function saveProfile() {
+      const name = document.getElementById('edit-name').value.trim();
+      const username = document.getElementById('edit-username').value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
+      const bio = document.getElementById('edit-bio').value.trim();
+
+      if (!name || !username) { showToast('Заполните имя и username', 'error'); return; }
+
+      const btn = document.getElementById('btn-save');
+      btn.disabled = true;
+      btn.textContent = 'Сохранение...';
+
+      const { error } = await sb
+        .from('profiles')
+        .update({ full_name: name, username, bio })
+        .eq('id', currentUser.id);
+
+      btn.disabled = false;
+      btn.textContent = '💾 Сохранить';
+
+      if (error) {
+        showToast(error.message.includes('unique') ? 'Username уже занят' : 'Ошибка сохранения', 'error');
+        return;
+      }
+
+      profile = { ...profile, full_name: name, username, bio };
+      renderProfile();
+      closeEdit();
+      showToast('✅ Профиль обновлён', 'success');
+    }
+
+    // ── Avatar upload ─────────────────────────────────────────────
+    async function uploadAvatar(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 2 * 1024 * 1024) { showToast('Файл слишком большой (макс. 2MB)', 'error'); return; }
+
+      showToast('⏳ Загрузка аватарки...', 'success');
+
+      const ext = file.name.split('.').pop();
+      const path = `${currentUser.id}/avatar.${ext}`;
+
+      const { error: upErr } = await sb.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true });
+
+      if (upErr) { showToast('Ошибка загрузки: ' + upErr.message, 'error'); return; }
+
+      const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(path);
+
+      const { error: dbErr } = await sb
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', currentUser.id);
+
+      if (dbErr) { showToast('Ошибка сохранения', 'error'); return; }
+
+      profile.avatar_url = publicUrl;
+      setAvatarImg(publicUrl + '?t=' + Date.now());
+      showToast('✅ Аватарка обновлена!', 'success');
+    }
+
+    // ── Posts ─────────────────────────────────────────────────────
+    async function loadPosts() {
+      const { data, error } = await sb
+        .from('posts')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
+
+      if (error) { showToast('Ошибка загрузки постов', 'error'); return; }
+
+      // Load user likes
+      const { data: likesData } = await sb
+        .from('likes')
+        .select('post_id')
+        .eq('user_id', currentUser.id);
+
+      userLikes = new Set((likesData || []).map(l => l.post_id));
+
+      renderPosts(data || []);
+      document.getElementById('stat-posts').textContent = (data || []).length;
+
+      const totalLikes = (data || []).reduce((sum, p) => sum + (p.likes_count || 0), 0);
+      document.getElementById('stat-likes').textContent = totalLikes;
+    }
+
+    function renderPosts(posts) {
+      const list = document.getElementById('posts-list');
+
+      if (posts.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">✍️</div>
+            <div class="empty-title">Пока нет постов</div>
+            <div class="empty-sub">Напишите первый пост выше!</div>
+          </div>`;
+        return;
+      }
+
+      list.innerHTML = posts.map(p => `
+        <div class="post-card" id="post-${p.id}">
+          <div class="post-header">
+            <div class="post-avatar-sm" style="width:36px;height:36px;font-size:13px">
+              ${profile.avatar_url
+                ? `<img src="${profile.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`
+                : `<span style="font-family:'Unbounded',sans-serif;font-weight:700">${(profile.full_name||'?')[0].toUpperCase()}</span>`}
+            </div>
+            <div>
+              <div class="post-user-name">${profile.full_name || profile.username}</div>
+            </div>
+            <div class="post-time">${timeAgo(p.created_at)}</div>
+            <button class="delete-btn" onclick="deletePost('${p.id}')" title="Удалить">🗑</button>
+          </div>
+          <div class="post-content">${escHtml(p.content)}</div>
+          <div class="post-actions">
+            <button class="action-btn ${userLikes.has(p.id) ? 'liked' : ''}" onclick="toggleLike('${p.id}', ${p.likes_count})">
+              <span class="icon">${userLikes.has(p.id) ? '❤️' : '🤍'}</span>
+              <span id="likes-${p.id}">${p.likes_count || 0}</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function onPostInput() {
+      const val = document.getElementById('post-input').value;
+      const len = val.length;
+      const countEl = document.getElementById('char-count');
+      countEl.textContent = `${len} / 500`;
+      countEl.classList.toggle('warn', len > 450);
+      document.getElementById('btn-post').disabled = val.trim().length === 0;
+    }
+
+    async function createPost() {
+      const content = document.getElementById('post-input').value.trim();
+      if (!content) return;
+
+      const btn = document.getElementById('btn-post');
+      btn.disabled = true;
+
+      const { error } = await sb.from('posts').insert({
+        user_id: currentUser.id,
+        content
+      });
+
+      if (error) {
+        showToast('Ошибка публикации', 'error');
+        btn.disabled = false;
+        return;
+      }
+
+      document.getElementById('post-input').value = '';
+      document.getElementById('char-count').textContent = '0 / 500';
+      btn.disabled = true;
+      showToast('✅ Пост опубликован!', 'success');
+      await loadPosts();
+    }
+
+    async function deletePost(id) {
+      if (!confirm('Удалить этот пост?')) return;
+      const { error } = await sb.from('posts').delete().eq('id', id);
+      if (error) { showToast('Ошибка удаления', 'error'); return; }
+      showToast('🗑 Пост удалён', 'success');
+      await loadPosts();
+    }
+
+    async function toggleLike(postId, currentCount) {
+      if (userLikes.has(postId)) {
+        await sb.from('likes').delete().eq('post_id', postId).eq('user_id', currentUser.id);
+        await sb.from('posts').update({ likes_count: Math.max(0, currentCount - 1) }).eq('id', postId);
+        userLikes.delete(postId);
+      } else {
+        await sb.from('likes').insert({ post_id: postId, user_id: currentUser.id });
+        await sb.from('posts').update({ likes_count: currentCount + 1 }).eq('id', postId);
+        userLikes.add(postId);
+      }
+      await loadPosts();
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────
+    function timeAgo(dateStr) {
+      const diff = (Date.now() - new Date(dateStr)) / 1000;
+      if (diff < 60) return 'только что';
+      if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
+      if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
+      return Math.floor(diff / 86400) + ' дн назад';
+    }
+
+    function escHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = `toast ${type} show`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    async function logout() {
+      await sb.auth.signOut();
+      window.location.href = 'auth.html';
+    }
+
+    init();
+  </script>
+</body>
+</html>
